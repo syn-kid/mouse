@@ -1,0 +1,189 @@
+[
+  {
+    "pad_id": "glorious-ice",
+    "name": "Glorious Ice",
+    "file": "glorious-ice.jpg",
+    "source_url": "https://p9.itc.cn/images01/20220217/341a9ffa39eb431fb39f0b4e9ad22048.jpeg",
+    "page_url": "https://www.gloriousgaming.com/products/glorious-ice",
+    "width": 5305,
+    "height": 3316,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "razer-strider",
+    "name": "Razer Strider",
+    "file": "razer-strider.jpg",
+    "source_url": "https://assets3.razerzone.com/ieCjDNswxlrWWu7ebv0FL6XWpqI=/1500x1000/https%3A%2F%2Fmedias-p1.phoenix.razer.com%2Fsys-master-phoenix-images-container%2Fh16%2Fh52%2F9233066360862%2Fstrider-large-1500x1000-1.jpg",
+    "page_url": "https://www.razer.com/gaming-mouse-mats/razer-strider",
+    "width": 1500,
+    "height": 1000,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "aqua-control-plus",
+    "name": "Aqua Control+",
+    "file": "aqua-control-plus.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/7Yrl1wpl7m",
+    "page_url": "https://www.x-raypad.com/aqua-control-plus",
+    "width": 520,
+    "height": 520,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "xraypad-equate",
+    "name": "X-raypad Equate",
+    "file": "xraypad-equate.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/9jAz1wplCd",
+    "page_url": "https://www.x-raypad.com/equate",
+    "width": 480,
+    "height": 480,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "artisan-raiden",
+    "name": "Artisan Raiden",
+    "file": "artisan-raiden.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/QSDF1wpkpZ",
+    "page_url": "https://www.artisan-jp.com/fx_raiden.html",
+    "width": 1024,
+    "height": 1024,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "artisan-shidenkai",
+    "name": "Artisan Shidenkai",
+    "file": "artisan-shidenkai.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/rSQn1wpkpa",
+    "page_url": "https://www.artisan-jp.com/fx_shidenkai.html",
+    "width": 700,
+    "height": 700,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "skypad-glass",
+    "name": "SkyPAD 3.0 Glass",
+    "file": "skypad-glass.jpg",
+    "source_url": "https://m.media-amazon.com/images/I/41wMeZevmrL.jpg",
+    "page_url": "https://skypad-gaming.com/products/skypad-3-0",
+    "width": 500,
+    "height": 500,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "logitech-g440",
+    "name": "Logitech G440",
+    "file": "logitech-g440.jpg",
+    "source_url": "https://resource.logitechg.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/gaming/en/products/g440/g440-gallery-2-new.png",
+    "page_url": "https://www.logitech.com/en-us/products/gaming/g440-hard-gaming-mouse-pad.html",
+    "width": 1600,
+    "height": 1374,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "artisan-hien",
+    "name": "Artisan Hien",
+    "file": "artisan-hien.jpg",
+    "source_url": "https://m.media-amazon.com/images/I/816eLoKstjL._AC_SL1500_.jpg",
+    "page_url": "https://www.artisan-jp.com/fx_hien.html",
+    "width": 1500,
+    "height": 1169,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "artisan-hayate-otsu",
+    "name": "Artisan Hayate Otsu",
+    "file": "artisan-hayate-otsu.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/bFxh1wpkpa",
+    "page_url": "https://www.artisan-jp.com/fx_hayate_otsu.html",
+    "width": 700,
+    "height": 700,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "lgg-saturn",
+    "name": "LGG Saturn",
+    "file": "lgg-saturn.jpg",
+    "source_url": "https://cdn.shopify.com/s/files/1/0255/9832/8929/files/LGG-SATURN-XL-B.png?v=1700716845",
+    "page_url": "https://lethal.gg/products/lgg-saturn",
+    "width": 3200,
+    "height": 2560,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "steelseries-qck-heavy",
+    "name": "SteelSeries QcK Heavy",
+    "file": "steelseries-qck-heavy.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/50ut1wpkqv",
+    "page_url": "https://steelseries.com/gaming-mousepads/qck-heavy",
+    "width": 1920,
+    "height": 1537,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "artisan-zero",
+    "name": "Artisan Zero",
+    "file": "artisan-zero.jpg",
+    "source_url": "https://m.media-amazon.com/images/I/61Eqsyg7QpL._AC_SL1500_.jpg",
+    "page_url": "https://www.artisan-jp.com/fx_zero.html",
+    "width": 1500,
+    "height": 1154,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "zowie-gsr",
+    "name": "ZOWIE G-SR",
+    "file": "zowie-gsr.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/bc3B1wpkrQ",
+    "page_url": "https://zowie.benq.com/en-us/mouse-pad/g-sr.html",
+    "width": 1000,
+    "height": 1000,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "zowie-gsr-se",
+    "name": "ZOWIE G-SR-SE",
+    "file": "zowie-gsr-se.jpg",
+    "source_url": "https://aka.doubaocdn.com/s/S1bZ1wpkrQ",
+    "page_url": "https://zowie.benq.com/en-us/mouse-pad/g-sr-se.html",
+    "width": 1000,
+    "height": 1000,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "lgg-jupiter",
+    "name": "LGG Jupiter",
+    "file": "lgg-jupiter.jpg",
+    "source_url": "https://cdn.shopify.com/s/files/1/0255/9832/8929/products/Jupiter_XL.jpg?v=1762816746",
+    "page_url": "https://lethal.gg/products/lgg-jupiter",
+    "width": 2842,
+    "height": 2302,
+    "strategy": "manual_url",
+    "needs_review": true
+  },
+  {
+    "pad_id": "gamesense-radar",
+    "name": "Gamesense Radar",
+    "file": "gamesense-radar.jpg",
+    "source_url": "https://gamesense.gg/cdn/shop/files/LBlack.png?v=1697573298&width=1200",
+    "page_url": "https://gamesense.gg/products/radar",
+    "width": 1200,
+    "height": 1200,
+    "strategy": "manual_url",
+    "needs_review": true
+  }
+]

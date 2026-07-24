@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DPI2Pad — 鼠标垫量化推荐</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* 光学仪器色板 — 深邃带蓝调，去除塑料荧光感 */
+    --bg: #07080b;
+    --surface: #0e1015;
+    --surface2: #161922;
+    --border: #1e2230;
+    --border-strong: #2a3040;
+    --text: #e6e8ee;
+    --text2: #9aa0ad;
+    --text3: #5d6373;
+    --accent: #5eead4;
+    --accent2: #2dd4bf;
+    --accent-glow: rgba(94,234,212,0.10);
+    --speed: #fbbf24;
+    --balanced: #a78bfa;
+    --control: #60a5fa;
+    --rough: #f87171;
+    --match-blue: #7dd3fc;
+    --match-blue-glow: rgba(125,211,252,0.18);
+    --desc-color: #c2c7d2;
+    --radius: 6px;
+    --radius-lg: 10px;
+    /* 字体系统 — 几何无衬线 + 等宽数据 */
+    --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, "Noto Sans SC", sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* 极细噪点纹理 — 营造金属/玻璃质感，非纯色平面 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .container { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 32px 32px 96px; }
+
+  /* ============================================================
+     HEADER — centered, compact
+     ============================================================ */
+  .header-row {
+    text-align: center;
+    margin-bottom: 28px;
+    padding-bottom: 0;
+  }
+
+  .header-brand h1 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .header-brand h1 span { color: var(--accent); }
+  .header-brand p {
+    color: var(--text3);
+    font-size: 11px;
+    margin-top: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
+  /* ============================================================
+     INPUT HERO — prominent centered input card
+     ============================================================ */
+  .input-hero {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(14,16,21,0.6) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px 36px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 1px 0 rgba(0,0,0,0.4);
+  }
+  /* 舞台光 — 更克制，窄光带 */
+  .input-hero::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .input-hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 480px;
+    height: 180px;
+    background: radial-gradient(ellipse at top, rgba(94,234,212,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .input-hero-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: var(--font-mono);
+  }
+
+  .input-hero-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+
+  .input-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .input-field label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+  .input-field input,
+  .input-field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .input-field input { width: 140px; font-variant-numeric: tabular-nums; }
+  .input-field input:focus,
+  .input-field select:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+  .input-field select {
+    width: 180px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%235d6373'%3E%3Cpath d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .btn-search {
+    background: var(--accent);
+    color: #07080b;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 11px 26px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    letter-spacing: 0.04em;
+    transition: background 0.18s, border-color 0.18s, transform 0.1s;
+    white-space: nowrap;
+    align-self: flex-end;
+    position: relative;
+    z-index: 1;
+  }
+  .btn-search:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    transform: translateY(-1px);
+  }
+  .btn-search:active { transform: translateY(0); }
+  .btn-search:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ============================================================
+     SURFACE BADGES
+     ============================================================ */
+  .surface-badge {
+    display: inline-block; padding: 3px 8px; border-radius: 3px;
+    font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em;
+    font-family: var(--font-mono);
+    border: 1px solid currentColor;
+    border-color: rgba(255,255,255,0.08);
+  }
+  .surface-badge.speed { background: rgba(251,191,36,0.08); color: var(--speed); border-color: rgba(251,191,36,0.2); }
+  .surface-badge.balanced { background: rgba(167,139,250,0.08); color: var(--balanced); border-color: rgba(167,139,250,0.2); }
+  .surface-badge.control { background: rgba(96,165,250,0.08); color: var(--control); border-color: rgba(96,165,250,0.2); }
+  .surface-badge.rough { background: rgba(248,113,113,0.08); color: var(--rough); border-color: rgba(248,113,113,0.2); }
+
+  /* ============================================================
+     RESULTS HEADER
+     ============================================================ */
+  .results-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 8px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .results-meta { font-size: 12px; color: var(--text3); font-family: var(--font-mono); letter-spacing: 0.02em; }
+  .results-meta strong { color: var(--accent); font-weight: 600; }
+
+  /* ============================================================
+     PAD CARD GRID — square cards, image-dominant
+     ============================================================ */
+  .pad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .pad-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.25s, transform 0.2s, background 0.25s;
+    display: grid;
+    grid-template-rows: 3fr 2fr auto;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.015);
+  }
+  .pad-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    background: var(--surface2);
+  }
+
+  /* Selected state — 边框+背景变化代替大范围发光 */
+  .pad-card.selected {
+    border-color: var(--match-blue);
+    background: linear-gradient(180deg, rgba(125,211,252,0.04) 0%, var(--surface) 60%);
+  }
+  .pad-card.selected:hover {
+    border-color: var(--match-blue);
+    background: linear-gradient(180deg, rgba(125,211,252,0.06) 0%, var(--surface2) 60%);
+  }
+
+  /* Image area */
+  .pad-image {
+    width: 100%;
+    min-height: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    padding: 18px;
+  }
+  .pad-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.6));
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .pad-card:hover .pad-image img { transform: scale(1.04); }
+  .pad-image .no-img {
+    font-size: 12px;
+    color: var(--text3);
+    text-align: center;
+    line-height: 1.3;
+    font-family: var(--font-mono);
+  }
+
+  /* Rank badge — 仪器铭牌感 */
+  .rank-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    min-width: 28px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 2;
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+  }
+  .rank-1 { background: var(--accent); color: #07080b; }
+  .rank-2 { background: var(--surface2); color: var(--text2); border: 1px solid var(--border-strong); }
+  .rank-3 { background: var(--surface2); color: var(--text2); border: 1px solid var(--border-strong); }
+  .rank-other { background: rgba(7,8,11,0.7); color: var(--text3); font-size: 10px; border: 1px solid var(--border); backdrop-filter: blur(8px); }
+
+  /* Info area */
+  .pad-info {
+    padding: 14px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+  }
+  .pad-name { font-size: 14px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+  .pad-brand { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-mono); }
+  .pad-desc { font-size: 12px; color: var(--desc-color); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .pad-specs { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+  .spec { font-size: 10px; padding: 2px 6px; border-radius: 3px; background: var(--surface2); color: var(--text3); font-family: var(--font-mono); letter-spacing: 0.02em; }
+  .spec.price { color: var(--accent); font-weight: 600; }
+
+  .friction-row { display: flex; gap: 8px; margin-top: 6px; }
+  .fr-item { display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: var(--text3); flex: 1; }
+  .fr-label { display: flex; justify-content: space-between; align-items: baseline; }
+  .fr-label span:first-child { color: var(--text3); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono); }
+  .fr-label span:last-child { font-weight: 600; color: var(--text); font-size: 11px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .fr-bar { width: 100%; height: 2px; border-radius: 1px; background: var(--surface2); overflow: hidden; }
+  .fr-fill { height: 100%; border-radius: 1px; }
+  .fr-fill.static { background: var(--control); }
+  .fr-fill.dynamic { background: var(--balanced); }
+  .fr-fill.stopping { background: var(--speed); }
+
+  .score-line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border);
+  }
+  .score-val {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--match-blue);
+    letter-spacing: -0.02em;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .score-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.16em; font-family: var(--font-mono); }
+
+  /* ============================================================
+     DETAIL DESC — comprehensive product description at card bottom
+     ============================================================ */
+  .pad-detail {
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.008) 0%, transparent 100%);
+  }
+  .pad-detail p {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin: 0 0 4px;
+  }
+  .pad-detail .detail-source {
+    font-size: 9px;
+    color: var(--text3);
+    font-style: italic;
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+  }
+
+  /* ============================================================
+     STATES
+     ============================================================ */
+  .loading { text-align: center; padding: 80px 0; color: var(--text3); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .loading .spinner {
+    width: 24px; height: 24px; border: 1px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .no-results { text-align: center; padding: 80px 0; color: var(--text3); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+
+  .footer { text-align: center; margin-top: 64px; color: var(--text3); font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 1100px) {
+    .input-hero-row { gap: 12px; }
+    .input-field input { width: 120px; }
+    .input-field select { width: 160px; }
+    .pad-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  }
+
+  @media (max-width: 900px) {
+    .pad-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .input-hero { padding: 22px 20px; }
+  }
+
+  @media (max-width: 768px) {
+    .container { padding: 20px 16px 60px; }
+    .input-hero { padding: 20px 16px; }
+    .input-hero-row { gap: 10px; }
+    .input-field input { width: 100px; font-size: 15px; padding: 10px 12px; }
+    .input-field select { width: 140px; font-size: 15px; padding: 10px 12px; }
+    .btn-search { padding: 10px 20px; font-size: 15px; }
+    .pad-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 16px 12px 48px; }
+    .header-brand h1 { font-size: 24px; }
+    .input-hero-row { flex-direction: column; align-items: stretch; }
+    .input-field input,
+    .input-field select { width: 100%; }
+    .btn-search { width: 100%; padding: 12px; }
+    .pad-grid { grid-template-columns: 1fr; gap: 14px; }
+    .pad-card { max-width: 420px; margin: 0 auto; }
+  }
+
+  /* ============================================================
+     MODAL OVERLAY
+     ============================================================ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(3,4,6,0.78);
+    backdrop-filter: blur(20px) saturate(120%);
+    -webkit-backdrop-filter: blur(20px) saturate(120%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px 64px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    max-width: 960px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 64px -16px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.02) inset;
+    transform: translateY(16px) scale(0.98);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal-overlay.active .modal-card {
+    transform: translateY(0) scale(1);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26px 30px 0;
+    gap: 12px;
+  }
+  .modal-header-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .modal-header-info h2 { font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+  .modal-header-info .modal-brand { font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; }
+
+  .modal-close {
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    font-family: inherit;
+    line-height: 1;
+  }
+  .modal-close:hover { background: var(--border); color: var(--text); }
+
+  /* 2-column body */
+  .modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    padding: 20px 28px 28px;
+  }
+
+  .modal-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+  .modal-image {
+    width: 100%;
+    max-height: 240px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .modal-image img {
+    width: 100%;
+    height: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
+  }
+  .modal-image .no-img {
+    font-size: 14px; color: var(--text3); padding: 40px 20px; text-align: center;
+  }
+
+  .radar-wrap { width: 100%; max-width: 360px; min-height: 280px; display: flex; align-items: center; justify-content: center; }
+  .radar-wrap svg { width: 100%; height: auto; display: block; }
+
+  .modal-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .dim-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .dim-stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .dim-stat .dim-name {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
+  }
+  .dim-stat .dim-score {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .dim-stat .dim-max { font-size: 9px; color: var(--text3); font-family: var(--font-mono); }
+
+  .modal-detail-desc {
+    font-size: 13px;
+    color: var(--desc-color);
+    line-height: 1.65;
+  }
+  .modal-detail-source {
+    font-size: 10px;
+    color: var(--text3);
+    font-style: italic;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+  }
+
+  /* Purchase links */
+  .purchase-links {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .btn-purchase {
+    padding: 9px 14px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    transition: transform 0.15s, background 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-sans);
+    letter-spacing: 0.02em;
+  }
+  .btn-purchase:hover { transform: translateY(-1px); }
+  .btn-purchase.jd       { background: #c91623; color: #fff; }
+  .btn-purchase.taobao   { background: #ff5000; color: #fff; }
+  .btn-purchase.amazon   { background: #232f3e; color: #ff9900; border-color: #3a5068; }
+  .btn-purchase.official { background: var(--accent); color: #07080b; }
+
+  /* Comparison section */
+  .modal-comparison {
+    padding: 0 30px 30px;
+  }
+  .modal-comparison h3 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    color: var(--text2);
+  }
+
+  .comp-table { width: 100%; border-collapse: collapse; }
+  .comp-table th {
+    text-align: left; font-size: 9px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.14em; padding: 10px 10px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .comp-table td {
+    padding: 11px 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 12px; vertical-align: middle;
+  }
+  .comp-table .dim-label { font-weight: 600; color: var(--text); white-space: nowrap; }
+  .comp-table .dim-rank { color: var(--text2); font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .comp-table .dim-pct { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .comp-bar-wrap { width: 100%; min-width: 60px; }
+  .comp-bar-bg {
+    width: 100%; height: 3px; border-radius: 2px;
+    background: var(--surface2); overflow: hidden;
+  }
+  .comp-bar-fill {
+    height: 100%; border-radius: 2px;
+    background: var(--accent);
+    width: 0;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .comp-top3 {
+    font-size: 10px; color: var(--text3); line-height: 1.4;
+    max-width: 180px;
+  }
+  .comp-top3 span { color: var(--text2); }
+
+  /* Modal responsive */
+  @media (max-width: 768px) {
+    .modal-overlay { padding: 20px 12px 40px; }
+    .modal-body { grid-template-columns: 1fr; gap: 20px; padding: 16px 20px 20px; }
+    .modal-header { padding: 18px 20px 0; }
+    .modal-header-info h2 { font-size: 18px; }
+    .modal-comparison { padding: 0 20px 20px; }
+    .dim-stats { grid-template-columns: repeat(3, 1fr); }
+    .comp-table th, .comp-table td { padding: 8px 6px; font-size: 11px; }
+    .comp-table .comp-top3 { display: none; }
+    .comp-table th:last-child { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .purchase-links { flex-direction: column; }
+    .btn-purchase { justify-content: center; }
+    .dim-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ============================================================
+     FLOATING COMPARE BUTTON
+     ============================================================ */
+  .float-compare-btn {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    z-index: 999;
+    min-width: 56px;
+    height: 48px;
+    padding: 0 18px;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #07080b;
+    border: 1px solid var(--accent);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(94,234,212,0.1);
+    transition: transform 0.18s, background 0.18s, box-shadow 0.18s;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    line-height: 1;
+  }
+  .float-compare-btn:hover {
+    transform: translateY(-2px);
+    background: var(--accent2);
+    border-color: var(--accent2);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(94,234,212,0.2);
+  }
+  .float-compare-btn .fc-icon { font-size: 16px; line-height: 1; }
+  .float-compare-btn .fc-label { font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* ============================================================
+     COMPARE MODAL
+     ============================================================ */
+  .compare-card {
+    max-width: 1100px;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .compare-card .modal-header {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compare-body { padding: 24px 30px 30px; }
+
+  /* Section titles */
+  .compare-section-title {
+    font-size: 11px; font-weight: 600; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    font-family: var(--font-mono); color: var(--text2);
+  }
+  .compare-section-title span { color: var(--accent); }
+
+  /* Selected chips bar */
+  .compare-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;
+    align-items: center; padding: 8px 0;
+  }
+  .compare-chips .empty-hint { color: var(--text3); font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.08em; }
+  .compare-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 3px;
+    font-size: 11px; font-weight: 600;
+    background: var(--bg); border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-family: var(--font-mono); letter-spacing: 0.02em;
+  }
+  .compare-chip .chip-remove {
+    cursor: pointer; font-size: 13px; color: var(--text3);
+    transition: color 0.15s;
+    line-height: 1;
+  }
+  .compare-chip .chip-remove:hover { color: var(--rough); }
+
+  /* Pad selector grid */
+  .compare-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .compare-pad-option {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.18s, background 0.18s;
+    user-select: none;
+    font-family: inherit;
+    color: var(--text);
+    position: relative;
+  }
+  .compare-pad-option:hover { border-color: var(--border-strong); }
+  .compare-pad-option.selected {
+    border-color: var(--accent);
+    background: rgba(94,234,212,0.06);
+  }
+  .compare-pad-option .opt-name {
+    font-size: 11px; font-weight: 700; line-height: 1.2; margin-bottom: 3px; letter-spacing: -0.01em;
+  }
+  .compare-pad-option .opt-brand {
+    font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-mono);
+  }
+  .compare-pad-option .opt-check {
+    display: none;
+    position: absolute; top: 4px; right: 6px;
+    font-size: 12px; color: var(--accent); font-weight: 700;
+  }
+  .compare-pad-option.selected .opt-check { display: block; }
+
+  /* Surface filter mini */
+  .compare-surface-filter {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .compare-surface-chip {
+    padding: 4px 12px; border-radius: 100px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text3);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .compare-surface-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .compare-surface-chip.active { background: var(--accent); border-color: var(--accent); color: #07080b; }
+
+  /* Comparison radar wrap */
+  .compare-radar-area {
+    display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap;
+    margin: 20px 0;
+  }
+  .compare-radar-wrap {
+    flex-shrink: 0;
+    width: 380px; max-width: 100%;
+  }
+  .compare-radar-wrap svg { width: 100%; height: auto; display: block; }
+
+  /* Legend */
+  .compare-legend {
+    display: flex; flex-direction: column; gap: 6px;
+    min-width: 160px;
+  }
+  .compare-legend-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .compare-legend-dot {
+    width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* Analysis report */
+  .compare-report {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 20px;
+  }
+  .compare-report h3 {
+    font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .compare-report h3 span { font-size: 18px; }
+  .compare-report .report-section { margin-bottom: 16px; }
+  .compare-report .report-section:last-child { margin-bottom: 0; }
+  .compare-report .report-label {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .compare-report .report-text {
+    font-size: 13px; color: var(--desc-color); line-height: 1.65;
+  }
+  .compare-report .report-text strong { color: var(--text); }
+  .compare-dim-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .compare-dim-row .dim-name { width: 60px; font-weight: 600; color: var(--text); flex-shrink: 0; }
+  .compare-dim-row .dim-ranking { flex: 1; color: var(--text2); font-size: 12px; }
+
+  /* Recommendation highlight */
+  .compare-recommendation {
+    background: rgba(94,234,212,0.05);
+    border: 1px solid rgba(94,234,212,0.2);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-top: 16px;
+  }
+  .compare-recommendation .rec-label {
+    font-size: 10px; font-weight: 600; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 10px;
+    font-family: var(--font-mono);
+  }
+  .compare-recommendation .rec-text {
+    font-size: 14px; color: var(--text); line-height: 1.6; font-weight: 500;
+  }
+
+  /* Compare responsive */
+  @media (max-width: 900px) {
+    .compare-selector-grid { grid-template-columns: repeat(4, 1fr); }
+    .compare-radar-area { flex-direction: column; align-items: center; }
+    .compare-radar-wrap { width: 340px; }
+  }
+  @media (max-width: 600px) {
+    .compare-selector-grid { grid-template-columns: repeat(3, 1fr); }
+    .compare-card { max-width: 100%; margin: 0 4px; }
+    .compare-body { padding: 16px; }
+    .float-compare-btn { height: 44px; padding: 0 14px; bottom: 16px; right: 16px; }
+    .float-compare-btn .fc-icon { font-size: 14px; }
+    .float-compare-btn .fc-label { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ================================================================
+       HEADER
+       ================================================================ -->
+  <div class="header-row">
+    <div class="header-brand">
+      <h1>DPI<span>2</span>Pad</h1>
+      <p>输入鼠标 DPI 与游戏灵敏度，量化匹配最适合你的鼠标垫</p>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       INPUT HERO — prominent user input area
+       ================================================================ -->
+  <div class="input-hero">
+    <div class="input-hero-label">自定义搜索</div>
+    <div class="input-hero-row">
+      <div class="input-field">
+        <label>鼠标 DPI</label>
+        <input type="number" id="mouseDpi" value="800" min="100" max="36000" step="100">
+      </div>
+      <div class="input-field">
+        <label>游戏灵敏度</label>
+        <input type="number" id="gameSens" value="1.0" min="0.01" max="100" step="0.01">
+      </div>
+      <div class="input-field">
+        <label>选择游戏</label>
+        <select id="gameId"></select>
+      </div>
+      <button class="btn-search" id="btnSearch" onclick="doSearch()">搜索匹配</button>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       RESULTS
+       ================================================================ -->
+  <div id="results"></div>
+
+  <footer class="footer">DPI2Pad · 量化匹配 · 告别外设焦虑</footer>
+</div>
+
+<script>
+const API = '';
+var lastSearchData = null;
+
+async function loadGames() {
+  try {
+    const res = await fetch(API + '/api/games');
+    const games = await res.json();
+    const sel = document.getElementById('gameId');
+    const cats = {};
+    games.forEach(g => {
+      if (!cats[g.category]) cats[g.category] = [];
+      cats[g.category].push(g);
+    });
+    Object.entries(cats).forEach(([cat, items]) => {
+      const og = document.createElement('optgroup');
+      og.label = cat;
+      items.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        opt.textContent = g.name;
+        if (g.id === 'cs2') opt.selected = true;
+        og.appendChild(opt);
+      });
+      sel.appendChild(og);
+    });
+  } catch (e) {
+    console.warn('Failed to load games');
+  }
+}
+
+async function doSearch() {
+  const dpi = document.getElementById('mouseDpi').value;
+  const sens = document.getElementById('gameSens').value;
+  const gameId = document.getElementById('gameId').value;
+  const btn = document.getElementById('btnSearch');
+  const el = document.getElementById('results');
+
+  if (!dpi || !sens) return;
+  btn.disabled = true;
+  btn.textContent = '搜索中...';
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>分析摩擦数据中...</div>';
+
+  try {
+    const params = new URLSearchParams({ mouse_dpi: dpi, game_sens: sens, game_id: gameId });
+    const res = await fetch(API + '/api/search?' + params);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    lastSearchData = data;
+    renderResults(data);
+  } catch (e) {
+    el.innerHTML = '<div class="no-results">无法连接后端服务<br><small>请确认已启动 python backend/main.py</small></div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '搜索匹配';
+  }
+}
+
+function renderResults(data) {
+  const el = document.getElementById('results');
+  const surfaceLabel = { speed: '速度型', balanced: '均衡型', control: '控制型', rough: '涩面' };
+  const maxF = 8;
+
+  let displaySurface = surfaceLabel[data.surface_preference] || '';
+  if (data.sensitivity_tier === 'low' && data.surface_preference === 'speed') {
+    displaySurface = '滑面';
+  }
+
+  let html = '<div class="results-header"><div>';
+  html += '<span class="results-title">匹配结果</span>';
+  const tierLabel = { high: '高敏', mid_high: '中高敏', mid: '中敏', mid_low: '中低敏', low: '低敏' };
+  html += '<span class="surface-badge ' + data.surface_preference + '" style="margin-left:10px">' + displaySurface + '</span>';
+  if (data.sensitivity_tier) html += '<span class="surface-badge" style="margin-left:6px;background:rgba(255,255,255,0.06);color:var(--text2)">' + (tierLabel[data.sensitivity_tier] || data.sensitivity_tier) + '</span>';
+  html += '</div>';
+  html += '<div class="results-meta">cm/360 = <strong>' + data.cm360 + '</strong> &nbsp;·&nbsp; ' + esc(data.game_name) + '</div>';
+  html += '</div><div class="pad-grid">';
+
+  data.recommendations.forEach((rec, i) => {
+    const rk = i < 3 ? ('rank-' + (i + 1)) : 'rank-other';
+    const rkText = i < 3 ? (i + 1) : rec.rank;
+    const img = findImage(rec.id, rec.name);
+
+    html += '<div class="pad-card" data-pad-id="' + esc(rec.id) + '">';
+
+    // Image area
+    html += '<div class="pad-image">';
+    html += '<div class="rank-badge ' + rk + '">' + rkText + '</div>';
+    if (img) {
+      html += '<img src="' + img + '" alt="' + esc(rec.name) + '" loading="lazy">';
+    } else {
+      html += '<span class="no-img">' + esc(rec.name) + '</span>';
+    }
+    html += '</div>';
+
+    // Info area
+    html += '<div class="pad-info">';
+    html += '<div class="pad-name" title="' + esc(rec.name) + '">' + esc(rec.name) + '</div>';
+    html += '<div class="pad-brand">' + esc(rec.brand) + '</div>';
+    html += '<div class="pad-desc">' + esc(rec.desc) + '</div>';
+
+    html += '<div class="pad-specs">';
+    html += '<span class="spec">' + esc(rec.material) + '</span>';
+    html += '<span class="spec">' + rec.sizes.join(' / ') + '</span>';
+    html += '<span class="spec price">¥' + rec.price_cny + '</span>';
+    html += '</div>';
+
+    html += '<div class="friction-row">';
+    html += '<div class="fr-item"><div class="fr-label"><span>静摩擦</span><span>' + rec.static_friction + '</span></div><div class="fr-bar"><div class="fr-fill static" style="width:' + (rec.static_friction / maxF * 100) + '%"></div></div></div>';
+    html += '<div class="fr-item"><div class="fr-label"><span>动摩擦</span><span>' + rec.dynamic_friction + '</span></div><div class="fr-bar"><div class="fr-fill dynamic" style="width:' + (rec.dynamic_friction / maxF * 100) + '%"></div></div></div>';
+    html += '<div class="fr-item"><div class="fr-label"><span>制动</span><span>' + rec.stopping_power + '</span></div><div class="fr-bar"><div class="fr-fill stopping" style="width:' + (rec.stopping_power / maxF * 100) + '%"></div></div></div>';
+    html += '</div>';
+    html += '<div style="font-size:9px;color:var(--text3);margin-top:1px">* 摩擦值为标准化相对系数</div>';
+
+    html += '<div class="score-line">';
+    html += '<span class="score-val">' + rec.score + '</span>';
+    html += '<span class="score-label">匹配度</span>';
+    html += '</div>';
+
+    html += '</div>'; // .pad-info
+
+    // Detail description section at bottom
+    html += '<div class="pad-detail">';
+    html += '<p>' + esc(rec.detail_desc || rec.desc) + '</p>';
+    if (rec.desc_source) {
+      html += '<span class="detail-source">' + esc(rec.desc_source) + '</span>';
+    }
+    html += '</div>';
+
+    html += '</div>'; // .pad-card
+  });
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ---- Card selection + double-click (timer-based to avoid conflict) ----
+var clickTimer = null;
+var clickPendingCard = null;
+
+function initCardInteraction() {
+  var resultsEl = document.getElementById('results');
+
+  resultsEl.addEventListener('click', function(e) {
+    if (e.button !== 0) return;
+    var card = e.target.closest('.pad-card');
+    if (!card) return;
+
+    // Second rapid click on same card → double-click, cancel single-click timer
+    if (clickTimer && clickPendingCard === card) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      clickPendingCard = null;
+      // Ensure card is selected, then open modal
+      var allSel = resultsEl.querySelectorAll('.pad-card.selected');
+      for (var i = 0; i < allSel.length; i++) { allSel[i].classList.remove('selected'); }
+      card.classList.add('selected');
+      var padId = card.getAttribute('data-pad-id');
+      if (padId) openModal(padId);
+      return;
+    }
+
+    // First click — clear any stale timer
+    clearTimeout(clickTimer);
+    clickPendingCard = card;
+
+    // Set timer: if it fires without a second click, this was a single click
+    clickTimer = setTimeout(function() {
+      // Single click — toggle selection
+      var wasSelected = card.classList.contains('selected');
+      var allSel = resultsEl.querySelectorAll('.pad-card.selected');
+      for (var i = 0; i < allSel.length; i++) { allSel[i].classList.remove('selected'); }
+      if (!wasSelected) { card.classList.add('selected'); }
+      clickTimer = null;
+      clickPendingCard = null;
+    }, 300);
+  });
+}
+
+// ---- Modal state ----
+let modalOverlay = null;
+
+// ---- Compute comparison from cached search data (no API call) ----
+function computeLocalComparison(padId, pads) {
+  var dimKeys = ['glide', 'control', 'durability', 'comfort', 'compatibility', 'value'];
+  var dimLabels = ['顺滑度', '操控性', '耐用性', '舒适度', '兼容性', '性价比'];
+  var comparison = {};
+  var total = pads.length;
+
+  if (!total) return null;
+
+  dimKeys.forEach(function(dk, di) {
+    // Build sorted list for this dimension
+    var ranked = pads
+      .filter(function(p) { return p.dimensions && p.dimensions[dk] !== undefined; })
+      .map(function(p) { return { id: p.id, name: p.name, score: p.dimensions[dk] }; })
+      .sort(function(a, b) { return b.score - a.score; });
+
+    var totalWithDim = ranked.length;
+    var entry = ranked.filter(function(r) { return r.id === padId; })[0];
+    var targetScore = entry ? entry.score : 0;
+    var rank = entry ? (ranked.indexOf(entry) + 1) : totalWithDim;
+    var percentile = totalWithDim > 0 ? Math.round((1 - (rank - 1) / totalWithDim) * 1000) / 10 : 0;
+
+    comparison[dk] = {
+      label: dimLabels[di],
+      score: targetScore,
+      rank: rank,
+      total: totalWithDim,
+      percentile: percentile,
+      top3: ranked.slice(0, 3)
+    };
+  });
+
+  return comparison;
+}
+
+// ---- Open modal (pure local data, no API call) ----
+function openModal(padId) {
+  // Remove existing modal
+  if (modalOverlay) { modalOverlay.remove(); modalOverlay = null; }
+
+  // Find pad in cached search results
+  var padData = null;
+  if (lastSearchData && lastSearchData.recommendations) {
+    for (var i = 0; i < lastSearchData.recommendations.length; i++) {
+      if (lastSearchData.recommendations[i].id === padId) {
+        padData = lastSearchData.recommendations[i];
+        break;
+      }
+    }
+  }
+
+  if (!padData) {
+    alert('未找到该鼠标垫数据，请先执行搜索');
+    return;
+  }
+
+  // Build comparison from all cached pads
+  var comparison = computeLocalComparison(padId, lastSearchData.recommendations);
+
+  // Build and show modal
+  var html = buildModalHTML(padData, comparison);
+  document.body.insertAdjacentHTML('beforeend', html);
+  modalOverlay = document.getElementById('modalOverlay');
+  document.body.style.overflow = 'hidden';
+
+  // Click overlay to close
+  modalOverlay.addEventListener('click', function(e) {
+    if (e.target === modalOverlay) closeModal();
+  });
+
+  // Draw radar chart after DOM is ready
+  setTimeout(function() {
+    var radarContainer = document.getElementById('radarChart');
+    if (!radarContainer) { console.warn('radarChart container not found'); return; }
+    if (padData.dimensions) {
+      drawRadarChart(radarContainer, padData.dimensions);
+    } else {
+      radarContainer.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px 0;font-size:13px">暂无维度评分数据</div>';
+      console.warn('No dimensions data for', padId);
+    }
+    // Animate comparison bars
+    setTimeout(function() {
+      var bars = document.querySelectorAll('.comp-bar-fill[data-width]');
+      for (var b = 0; b < bars.length; b++) {
+        bars[b].style.width = bars[b].getAttribute('data-width') + '%';
+      }
+    }, 80);
+  }, 150);
+}
+
+// ---- Radar chart (SVG via innerHTML, with animation) ----
+function drawRadarChart(container, dimensions) {
+  var dimKeys = ['glide', 'control', 'durability', 'comfort', 'compatibility', 'value'];
+  var labels = ['顺滑度', '操控性', '耐用性', '舒适度', '兼容性', '性价比'];
+  var maxVal = 10;
+  var size = 340;
+  var cx = size / 2, cy = size / 2;
+  var radius = size / 2 - 46;
+  var angleOffset = -Math.PI / 2;
+
+  function getAngle(i) { return angleOffset + (2 * Math.PI / 6) * i; }
+  function px(i, r) { var a = getAngle(i); return (cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1); }
+
+  // Build background grid
+  var gridHtml = '';
+  for (var lv = 1; lv <= 5; lv++) {
+    var gr = (radius * lv) / 5;
+    var pts = '';
+    for (var i = 0; i < 6; i++) pts += px(i, gr) + ' ';
+    gridHtml += '<polygon points="' + pts.trim() + '" fill="none" stroke="#1e2230" stroke-width="' + (lv === 5 ? '1' : '0.5')+'"/>'; + '"/>';
+  }
+
+  // Build axis lines
+  var axesHtml = '';
+  for (var i = 0; i < 6; i++) {
+    var a = getAngle(i);
+    var ax = (cx + radius * Math.cos(a)).toFixed(1);
+    var ay = (cy + radius * Math.sin(a)).toFixed(1);
+    axesHtml += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ax + '" y2="' + ay + '" stroke="#1e2230" stroke-width="1"/>';
+  }
+
+  // Build axis labels
+  var labelHtml = '';
+  for (var i = 0; i < 6; i++) {
+    var a = getAngle(i);
+    var lr = radius + 24;
+    labelHtml += '<text x="' + (cx + lr * Math.cos(a)).toFixed(0) + '" y="' + (cy + lr * Math.sin(a) + 4).toFixed(0) + '" fill="#5d6373" font-size="10" font-weight="500" text-anchor="middle" font-family="JetBrains Mono, monospace" letter-spacing="1">' + labels[i] + '</text>';
+  }
+
+  // Compute final data points
+  var finalPts = '';
+  for (var i = 0; i < 6; i++) {
+    var dr = (radius * (dimensions[dimKeys[i]] || 0)) / maxVal;
+    finalPts += px(i, dr) + ' ';
+  }
+  finalPts = finalPts.trim();
+
+  // Data circles HTML
+  var circlesHtml = '';
+  for (var i = 0; i < 6; i++) {
+    circlesHtml += '<circle id="rc-dot-' + i + '" cx="' + cx + '" cy="' + cy + '" r="4" fill="#00e6a0"/>';
+  }
+
+  // Tooltip group
+  var tooltipHtml = '<g id="rc-tooltip" opacity="0">' +
+    '<rect id="rc-tt-rect" x="0" y="0" width="10" height="10" rx="3" fill="#161922" stroke="#2a3040"/>' +
+    '<text id="rc-tt-text" x="0" y="0" fill="#e6e8ee" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono, monospace"></text>' +
+    '</g>';
+
+  // Full SVG
+  var svgHtml = '<svg viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">' +
+    gridHtml + axesHtml + labelHtml +
+    '<polygon id="rc-data-poly" points="' + finalPts + '" fill="rgba(0,230,160,0.15)" stroke="#00e6a0" stroke-width="2"/>' +
+    circlesHtml + tooltipHtml +
+    '</svg>';
+
+  container.innerHTML = svgHtml;
+
+  // Get animated elements
+  var svgEl = container.querySelector('svg');
+  var dataPoly = container.querySelector('#rc-data-poly');
+  var dots = [];
+  for (var i = 0; i < 6; i++) { dots.push(container.querySelector('#rc-dot-' + i)); }
+
+  // Hover zones (add after SVG is in DOM)
+  var hoverHtml = '';
+  for (var i = 0; i < 6; i++) {
+    var dr = (radius * (dimensions[dimKeys[i]] || 0)) / maxVal;
+    var ha = getAngle(i);
+    var hx = (cx + dr * Math.cos(ha)).toFixed(1);
+    var hy = (cy + dr * Math.sin(ha)).toFixed(1);
+    hoverHtml += '<circle cx="' + hx + '" cy="' + hy + '" r="16" fill="transparent" style="cursor:pointer" data-rc-idx="' + i + '"/>';
+  }
+  // Insert hover zones before tooltip
+  var ttGroup = container.querySelector('#rc-tooltip');
+  if (ttGroup) {
+    ttGroup.insertAdjacentHTML('beforebegin', hoverHtml);
+  }
+
+  // Tooltip logic
+  var tooltipGroup = container.querySelector('#rc-tooltip');
+  var ttRect = container.querySelector('#rc-tt-rect');
+  var ttText = container.querySelector('#rc-tt-text');
+  var hzOn = function(i) {
+    var dr = (radius * (dimensions[dimKeys[i]] || 0)) / maxVal;
+    var a = getAngle(i);
+    var tx = cx + dr * Math.cos(a);
+    var ty = cy + dr * Math.sin(a);
+    var label = labels[i] + ': ' + dimensions[dimKeys[i]] + '/' + maxVal;
+    ttText.textContent = label;
+    try {
+      var bb = ttText.getBBox();
+      var pw = bb.width + 16, ph = bb.height + 10;
+      ttRect.setAttribute('x', tx - pw / 2);
+      ttRect.setAttribute('y', ty - ph - 14);
+      ttRect.setAttribute('width', pw);
+      ttRect.setAttribute('height', ph);
+      ttText.setAttribute('x', tx);
+      ttText.setAttribute('y', ty - ph + ph / 2 + 6);
+    } catch(e) {}
+    tooltipGroup.setAttribute('opacity', '1');
+  };
+  var hzOff = function() { tooltipGroup.setAttribute('opacity', '0'); };
+
+  var hzEls = container.querySelectorAll('circle[data-rc-idx]');
+  for (var h = 0; h < hzEls.length; h++) {
+    (function(idx) {
+      hzEls[h].addEventListener('mouseenter', function() { hzOn(idx); });
+      hzEls[h].addEventListener('mouseleave', hzOff);
+    })(parseInt(hzEls[h].getAttribute('data-rc-idx')));
+  }
+
+  // ---- Animate: start from 0, expand to full ----
+  var targetScores = [];
+  for (var i = 0; i < 6; i++) { targetScores.push(dimensions[dimKeys[i]] || 0); }
+
+  var startTime = null;
+  var duration = 600;
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function animate(ts) {
+    if (!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+    var progress = Math.min(elapsed / duration, 1);
+    var eased = easeOutCubic(progress);
+
+    var pts = '';
+    for (var i = 0; i < 6; i++) {
+      var curR = (radius * targetScores[i] * eased) / maxVal;
+      pts += px(i, curR) + ' ';
+    }
+    dataPoly.setAttribute('points', pts.trim());
+
+    for (var i = 0; i < 6; i++) {
+      var curR = (radius * targetScores[i] * eased) / maxVal;
+      if (dots[i]) {
+        dots[i].setAttribute('cx', cx + curR * Math.cos(getAngle(i)));
+        dots[i].setAttribute('cy', cy + curR * Math.sin(getAngle(i)));
+      }
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+// ---- Build comparison table ----
+function buildComparisonTable(comparison) {
+  if (!comparison) return '<p style="color:var(--text3);text-align:center;padding:20px">暂无维度对比数据</p>';
+
+  var dimKeys = ['glide', 'control', 'durability', 'comfort', 'compatibility', 'value'];
+  var html = '<table class="comp-table"><thead><tr>';
+  html += '<th>维度</th><th>评分</th><th></th><th>排名</th><th>百分位</th><th>前三名</th>';
+  html += '</tr></thead><tbody>';
+
+  dimKeys.forEach(function(k) {
+    var d = comparison[k];
+    if (!d) return;
+    var barPct = d.score * 10;
+    html += '<tr>';
+    html += '<td class="dim-label">' + esc(d.label) + '</td>';
+    html += '<td style="font-weight:700;color:var(--accent)">' + d.score + '<span style="font-size:10px;color:var(--text3)">/10</span></td>';
+    html += '<td><div class="comp-bar-wrap"><div class="comp-bar-bg"><div class="comp-bar-fill" data-width="' + barPct + '"></div></div></div></td>';
+    html += '<td class="dim-rank">#' + d.rank + '/' + d.total + '</td>';
+    html += '<td class="dim-pct">' + d.percentile + '%</td>';
+    html += '<td class="comp-top3">';
+    if (d.top3) {
+      d.top3.forEach(function(t, ti) {
+        html += '<span>' + (ti + 1) + '. ' + esc(t.name) + ' (' + t.score + ')</span><br>';
+      });
+    }
+    html += '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
+// ---- Modal HTML builder ----
+function buildModalHTML(pad, comparison) {
+  var img = findImage(pad.id, pad.name);
+  var dimKeys = ['glide', 'control', 'durability', 'comfort', 'compatibility', 'value'];
+  var dimLabels = ['顺滑度', '操控性', '耐用性', '舒适度', '兼容性', '性价比'];
+
+  var html = '<div class="modal-overlay active" id="modalOverlay">';
+  html += '<div class="modal-card">';
+
+  // Header
+  html += '<div class="modal-header">';
+  html += '<div class="modal-header-info">';
+  html += '<h2>' + esc(pad.name) + '</h2>';
+  html += '<span class="modal-brand">' + esc(pad.brand) + '</span>';
+  html += '<span class="surface-badge ' + esc(pad.surface) + '">' + esc(pad.surface) + '</span>';
+  html += '</div>';
+  html += '<button class="modal-close" onclick="closeModal()">&#10005;</button>';
+  html += '</div>';
+
+  // Body
+  html += '<div class="modal-body">';
+
+  // Left column
+  html += '<div class="modal-left">';
+  html += '<div class="modal-image">';
+  if (img) {
+    html += '<img src="' + img + '" alt="' + esc(pad.name) + '">';
+  } else {
+    html += '<span class="no-img">' + esc(pad.name) + '</span>';
+  }
+  html += '</div>';
+  html += '<div class="radar-wrap" id="radarChart"></div>';
+  html += '</div>';
+
+  // Right column
+  html += '<div class="modal-right">';
+  // Dimension stat cards
+  html += '<div class="dim-stats">';
+  for (var i = 0; i < 6; i++) {
+    var k = dimKeys[i];
+    var score = pad.dimensions ? (pad.dimensions[k] || '?') : '?';
+    html += '<div class="dim-stat"><div class="dim-name">' + dimLabels[i] + '</div>';
+    html += '<div class="dim-score">' + score + '</div>';
+    html += '<div class="dim-max">/10</div></div>';
+  }
+  html += '</div>';
+
+  // Full description
+  html += '<p class="modal-detail-desc">' + esc(pad.detail_desc || pad.desc) + '</p>';
+  if (pad.desc_source) {
+    html += '<span class="modal-detail-source">' + esc(pad.desc_source) + '</span>';
+  }
+
+  // Purchase links
+  if (pad.purchase_links) {
+    var links = pad.purchase_links;
+    html += '<div class="purchase-links">';
+    if (links.jd) html += '<a class="btn-purchase jd" href="' + esc(links.jd) + '" target="_blank" rel="noopener">&#128722; 京东购买</a>';
+    if (links.taobao) html += '<a class="btn-purchase taobao" href="' + esc(links.taobao) + '" target="_blank" rel="noopener">&#128722; 淘宝搜索</a>';
+    if (links.amazon) html += '<a class="btn-purchase amazon" href="' + esc(links.amazon) + '" target="_blank" rel="noopener">&#128722; Amazon</a>';
+    if (links.official) html += '<a class="btn-purchase official" href="' + esc(links.official) + '" target="_blank" rel="noopener">&#127968; 官方网站</a>';
+    html += '</div>';
+  }
+
+  html += '</div>'; // modal-right
+  html += '</div>'; // modal-body
+
+  // Comparison section
+  html += '<div class="modal-comparison">';
+  html += '<h3>六维能力对比</h3>';
+  html += buildComparisonTable(comparison);
+  html += '</div>';
+
+  html += '</div>'; // modal-card
+  html += '</div>'; // modal-overlay
+
+  return html;
+}
+
+// ---- Close modal ----
+function closeModal() {
+  if (modalOverlay) {
+    modalOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(function() {
+      if (modalOverlay) {
+        modalOverlay.remove();
+        modalOverlay = null;
+      }
+    }, 260);
+  }
+}
+
+// ---- Escape key to close modal ----
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && modalOverlay) {
+    closeModal();
+  }
+});
+
+const IMG_MAP = {
+    "aqua-control-plus": "/images/pads/aqua-control-plus.jpg",
+    "artisan-hayate-otsu": "/images/pads/artisan-hayate-otsu.jpg",
+    "artisan-hien": "/images/pads/artisan-hien.jpg",
+    "artisan-raiden": "/images/pads/artisan-raiden.jpg",
+    "artisan-shidenkai": "/images/pads/artisan-shidenkai.jpg",
+    "artisan-zero": "/images/pads/artisan-zero.jpg",
+    "gamesense-radar": "/images/pads/gamesense-radar.jpg",
+    "glorious-ice": "/images/pads/glorious-ice.jpg",
+    "lgg-jupiter": "/images/pads/lgg-jupiter.jpg",
+    "lgg-saturn": "/images/pads/lgg-saturn.jpg",
+    "logitech-g440": "/images/pads/logitech-g440.jpg",
+    "razer-strider": "/images/pads/razer-strider.jpg",
+    "skypad-glass": "/images/pads/skypad-glass.jpg",
+    "steelseries-qck-heavy": "/images/pads/steelseries-qck-heavy.jpg",
+    "xraypad-equate": "/images/pads/xraypad-equate.jpg",
+    "zowie-gsr": "/images/pads/zowie-gsr.jpg",
+    "zowie-gsr-se": "/images/pads/zowie-gsr-se.jpg",
+  };
+function findImage(id, name) {
+  if (IMG_MAP[id]) return IMG_MAP[id];
+  return null;
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---- Real-time search with debounce ----
+let searchTimer = null;
+function scheduleSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(doSearch, 200);
+}
+
+loadGames();
+initCardInteraction();
+setTimeout(doSearch, 400);
+
+// ================================================================
+// COMPARE SPACE — multi-pad comparison
+// ================================================================
+var COMPARE_COLORS = ['#00e6a0', '#3b9eff', '#f0a000', '#9b6dff', '#ff6b6b'];
+var compareSelected = [];
+var allPadsCache = null;
+
+function getPadColor(idx) { return COMPARE_COLORS[idx % COMPARE_COLORS.length]; }
+
+// ---- Multi-pad radar chart ----
+function drawMultiRadarChart(container, padsData) {
+  var dimKeys = ['glide', 'control', 'durability', 'comfort', 'compatibility', 'value'];
+  var labels = ['顺滑度', '操控性', '耐用性', '舒适度', '兼容性', '性价比'];
+  var maxVal = 10;
+  var size = 400;
+  var cx = size / 2, cy = size / 2;
+  var radius = size / 2 - 50;
+  var angleOffset = -Math.PI / 2;
+
+  function getAngle(i) { return angleOffset + (2 * Math.PI / 6) * i; }
+  function px(i, r) { var a = getAngle(i); return (cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1); }
+
+  // Background grid
+  var gridHtml = '';
+  for (var lv = 1; lv <= 5; lv++) {
+    var gr = (radius * lv) / 5;
+    var pts = '';
+    for (var i = 0; i < 6; i++) pts += px(i, gr) + ' ';
+    gridHtml += '<polygon points="' + pts.trim() + '" fill="none" stroke="#1e2230" stroke-width="' + (lv === 5 ? '1' : '0.5')+'"/>'; + '"/>';
+  }
+
+  // Axis lines
+  var axesHtml = '';
+  for (var i = 0; i < 6; i++) {
+    var a = getAngle(i);
+    var ax = (cx + radius * Math.cos(a)).toFixed(1);
+    var ay = (cy + radius * Math.sin(a)).toFixed(1);
+    axesHtml += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ax + '" y2="' + ay + '" stroke="#1e2230" stroke-width="1"/>';
+  }
+
+  // Axis labels
+  var labelHtml = '';
+  for (var i = 0; i < 6; i++) {
+    var a = getAngle(i);
+    var lr = radius + 26;
+    labelHtml += '<text x="' + (cx + lr * Math.cos(a)).toFixed(0) + '" y="' + (cy + lr * Math.sin(a) + 4).toFixed(0) + '" fill="#5d6373" font-size="11" font-weight="500" text-anchor="middle" font-family="JetBrains Mono, monospace" letter-spacing="1">' + labels[i] + '</text>';
+  }
+
+  // Data polygons (one per pad)
+  var polysHtml = '';
+  var dotsHtml = '';
+  for (var p = 0; p < padsData.length; p++) {
+    var color = padsData[p].color;
+    var dims = padsData[p].dimensions;
+    var pts = '';
+    for (var i = 0; i < 6; i++) {
+      var dr = (radius * (dims[dimKeys[i]] || 0)) / maxVal;
+      pts += px(i, dr) + ' ';
+      dotsHtml += '<circle cx="' + px(i, dr) + '" r="4" fill="' + color + '"/>';
+    }
+    polysHtml += '<polygon points="' + pts.trim() + '" fill="' + color + '" fill-opacity="0.12" stroke="' + color + '" stroke-width="2"/>';
+  }
+
+  var svgHtml = '<svg viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">' +
+    gridHtml + axesHtml + labelHtml + polysHtml + dotsHtml + '</svg>';
+
+  container.innerHTML = svgHtml;
+}
+
+// ---- Comparison report builder (适配新报告格式) ----
+function buildCompareReport(analysis) {
+  // 新格式: { report: {...}, selected_pads: [...], user_context: {...} }
+  var rpt = analysis.report;
+  var hasNewFormat = !!(rpt && (rpt.conclusion || rpt.mentions || rpt.radar || rpt.details || rpt.buy_guide));
+
+  if (hasNewFormat) {
+    return buildNewReport(analysis);
+  }
+
+  // 旧格式兼容
+  if (!analysis || !analysis.dimension_analysis) {
+    return '<p style="color:var(--text3);text-align:center;padding:20px">请选择产品后生成对比报告</p>';
+  }
+  return buildOldReport(analysis);
+}
+
+function buildNewReport(analysis) {
+  var rpt = analysis.report;
+  var html = '<div class="compare-report">';
+  html += '<h3><span>&#128202;</span> ' + esc(rpt.title || '对比分析报告') + '</h3>';
+
+  // 数据来源
+  if (rpt.data_source_note) {
+    html += '<div class="report-text" style="margin-bottom:16px;font-size:11px;color:var(--text3)">' + esc(rpt.data_source_note) + '</div>';
+  }
+  if (rpt.summary) {
+    html += '<div class="report-text" style="margin-bottom:16px;color:var(--text3)">' + esc(rpt.summary) + '</div>';
+  }
+
+  // ## 1. 综合推荐结论
+  if (rpt.conclusion) {
+    html += '<div class="compare-recommendation" style="margin-bottom:20px"><div class="rec-label">&#127942; 综合推荐结论</div>';
+    var concLines = rpt.conclusion.split('\n\n');
+    for (var cl = 0; cl < concLines.length; cl++) {
+      html += '<div class="rec-text" style="margin-bottom:' + (cl < concLines.length - 1 ? '8px' : '0') + '"><strong>' + esc(concLines[cl].replace(/\*\*(.*?)\*\*/g, '$1')) + '</strong></div>';
+    }
+    html += '</div>';
+  }
+
+  // ## 2. 全网声量与口碑
+  if (rpt.mentions && rpt.mentions.length > 0) {
+    html += '<div class="report-section"><div class="report-label">&#128240; 全网声量与口碑</div>';
+    for (var m = 0; m < rpt.mentions.length; m++) {
+      var mn = rpt.mentions[m];
+      html += '<div style="margin-bottom:10px;padding:10px;background:rgba(255,255,255,0.02);border-radius:6px">';
+      html += '<div style="font-weight:700;color:var(--text);margin-bottom:4px">' + esc(mn.emoji || '') + ' <strong>' + esc(mn.name) + '</strong>：' + mn.approval_rate + '% 好评率 | 提及 ' + mn.mention_count + ' 次</div>';
+      if (mn.top_pos && mn.top_pos.length > 0) {
+        html += '<div style="font-size:11px;color:var(--accent)">被夸：' + esc(mn.top_pos.join('、')) + '</div>';
+      }
+      if (mn.top_neg && mn.top_neg.length > 0) {
+        html += '<div style="font-size:11px;color:var(--text3)">槽点：' + esc(mn.top_neg.join('、')) + '</div>';
+      }
+      html += '</div>';
+    }
+    // 数据不足提示
+    if (rpt.insufficient && rpt.insufficient.length > 0) {
+      html += '<div style="font-size:11px;color:var(--text3);margin-top:6px">⚠ ' + esc(rpt.insufficient.join('、')) + ' 在 B站 社区数据不足，以上评价供参考。</div>';
+    }
+    html += '</div>';
+  }
+
+  // ## 3. 核心性能雷达图
+  if (rpt.radar && rpt.radar.radar_lines && rpt.radar.radar_lines.length > 0) {
+    html += '<div class="report-section"><div class="report-label">&#128202; 核心性能对比（算法+社区综合评分）</div>';
+    for (var rl = 0; rl < rpt.radar.radar_lines.length; rl++) {
+      var line = rpt.radar.radar_lines[rl];
+      html += '<div class="compare-dim-row"><div class="dim-name">' + esc(line.dimension) + '</div><div class="dim-ranking">';
+      html += '<span style="font-size:13px;color:var(--text2)">' + esc(line.comparison || '') + '</span>';
+      html += '</div></div>';
+      if (line.description) {
+        html += '<div style="font-size:10px;color:var(--text3);margin:-4px 0 8px 70px">' + esc(line.description) + '</div>';
+      }
+    }
+    html += '</div>';
+  }
+
+  // ## 4. 详细对比分析
+  if (rpt.details && rpt.details.length > 0) {
+    html += '<div class="report-section"><div class="report-label">&#128269; 详细对比分析</div>';
+    for (var d = 0; d < rpt.details.length; d++) {
+      var det = rpt.details[d];
+      html += '<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.02);border-radius:6px">';
+      html += '<div style="font-weight:700;color:var(--text);margin-bottom:6px;font-size:14px">' + esc(det.name) + ' <span style="font-weight:400;font-size:11px;color:var(--text3)">' + esc(det.brand) + ' · ' + esc(det.surface) + ' · ¥' + (det.price || '?') + '</span></div>';
+      if (det.insufficient_data) {
+        html += '<div style="font-size:12px;color:var(--text3)">数据不足，暂无法评估。产品描述：' + esc(det.desc || '') + '</div>';
+      } else {
+        if (det.praised && det.praised.length > 0) {
+          html += '<div style="font-size:12px;margin-bottom:4px"><span style="color:var(--accent)">被夸最多：</span><span style="color:var(--text2)">' + esc(det.praised.join('；')) + '</span></div>';
+        }
+        if (det.criticized && det.criticized.length > 0) {
+          html += '<div style="font-size:12px;margin-bottom:6px"><span style="color:var(--text3)">被诟病：</span><span style="color:var(--text3)">' + esc(det.criticized.join('；')) + '</span></div>';
+        }
+        if (det.personas && det.personas.length > 0) {
+          html += '<div style="font-size:11px;margin-top:4px"><span style="color:var(--text2)">适合人群：</span>';
+          for (var pe = 0; pe < det.personas.length; pe++) {
+            html += '<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;background:var(--surface2);border-radius:10px;font-size:10px;color:var(--text2)">' + esc(det.personas[pe]) + '</span>';
+          }
+          html += '</div>';
+        }
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // ## 5. 最终购买建议
+  if (rpt.buy_guide && rpt.buy_guide.length > 0) {
+    html += '<div class="compare-recommendation"><div class="rec-label">&#127942; 最终购买建议</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<thead><tr><th style="text-align:left;padding:8px 10px;color:var(--text3);border-bottom:1px solid var(--border)">你的需求</th><th style="text-align:left;padding:8px 10px;color:var(--text3);border-bottom:1px solid var(--border)">闭眼入这款</th></tr></thead><tbody>';
+    for (var g = 0; g < rpt.buy_guide.length; g++) {
+      var bg = rpt.buy_guide[g];
+      html += '<tr><td style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text)">' + esc(bg.need) + '</td>';
+      html += '<td style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.04)"><strong style="color:var(--accent)">' + esc(bg.pick) + '</strong>';
+      if (bg.reason) html += ' <span style="font-size:11px;color:var(--text3)">' + esc(bg.reason) + '</span>';
+      html += '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // 用户上下文
+  if (analysis.user_context && analysis.user_context.cm360) {
+    var uc = analysis.user_context;
+    html += '<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text3)">';
+    html += 'cm/360 ≈ ' + uc.cm360 + ' · ' + esc(uc.tier_label || '') + ' · ' + esc(uc.game_name || '');
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function buildOldReport(analysis) {
+  var html = '<div class="compare-report">';
+  html += '<h3><span>&#128202;</span> 对比分析报告</h3>';
+
+  if (analysis.opening_summary) {
+    html += '<div class="report-text" style="margin-bottom:16px">' + esc(analysis.opening_summary) + '</div>';
+  }
+  if (analysis.surface_analysis) {
+    html += '<div class="report-section"><div class="report-label">表面类型分析</div>';
+    html += '<div class="report-text">' + esc(analysis.surface_analysis) + '</div></div>';
+  }
+  html += '<div class="report-section"><div class="report-label">六维深度对比</div>';
+  for (var d = 0; d < analysis.dimension_analysis.length; d++) {
+    var da = analysis.dimension_analysis[d];
+    html += '<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05)">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    html += '<span style="font-weight:700;color:var(--text);font-size:14px">' + esc(da.dimension_label) + '</span>';
+    html += '<span style="font-size:10px;color:var(--accent);background:rgba(94,234,212,0.08);padding:1px 6px;border-radius:3px;font-family:var(--font-mono);letter-spacing:0.04em">' + esc(da.tag || '') + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(da.ranking_text || '') + '</div>';
+    html += '<div style="font-size:12px;color:var(--desc-color)">' + esc(da.verdict || '') + '</div>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-top:3px">' + esc(da.interpretation || '') + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  if (analysis.detail_summaries) {
+    html += '<div class="report-section"><div class="report-label">产品档案</div>';
+    for (var s = 0; s < analysis.detail_summaries.length; s++) {
+      var ds = analysis.detail_summaries[s];
+      html += '<div style="margin-bottom:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:6px">';
+      html += '<div style="font-weight:700;color:var(--text);margin-bottom:4px">' + esc(ds.name) + ' <span style="font-weight:400;font-size:11px;color:var(--text3)">' + esc(ds.brand) + ' · ' + esc(ds.surface) + ' · ¥' + ds.price + '</span></div>';
+      html += '<div style="font-size:12px;color:var(--desc-color);margin-bottom:4px">' + esc(ds.desc_excerpt || '') + '</div>';
+      html += '<div style="font-size:11px"><span style="color:var(--accent)">优势：</span><span style="color:var(--text2)">' + esc((ds.strengths || []).join('、')) + '</span></div>';
+      html += '<div style="font-size:11px"><span style="color:var(--text3)">短板：</span><span style="color:var(--text3)">' + esc((ds.weaknesses || []).join('、')) + '</span></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  if (analysis.overall_assessment) {
+    html += '<div class="report-section"><div class="report-label">综合评述</div>';
+    html += '<div class="report-text">' + esc(analysis.overall_assessment) + '</div></div>';
+  }
+  if (analysis.recommendation) {
+    html += '<div class="compare-recommendation"><div class="rec-label">&#127942; 推荐方案</div>';
+    var recLines = analysis.recommendation.split('\n\n');
+    for (var rl = 0; rl < recLines.length; rl++) {
+      html += '<div class="rec-text" style="margin-bottom:' + (rl < recLines.length - 1 ? '8px' : '0') + '">' + esc(recLines[rl]) + '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ---- Render compare modal content ----
+function renderCompareContent(allPads, selectedIds) {
+  var el = document.getElementById('compareContent');
+  if (!el) return;
+
+  // Surface filter
+  var surfaces = ['', 'speed', 'balanced', 'control', 'rough'];
+  var surfaceLabels = { '': '全部', speed: '速度型', balanced: '均衡型', control: '控制型', rough: '涩面' };
+
+  var html = '';
+
+  // Selected chips
+  html += '<div class="compare-section-title"><span>&#10003;</span> 已选产品（' + selectedIds.length + '/5）</div>';
+  html += '<div class="compare-chips" id="compareChips">';
+  if (selectedIds.length === 0) {
+    html += '<span class="empty-hint">请从下方选择 2-5 款鼠标垫进行对比</span>';
+  } else {
+    for (var s = 0; s < selectedIds.length; s++) {
+      var sp = null;
+      for (var ap = 0; ap < allPads.length; ap++) { if (allPads[ap].id === selectedIds[s]) { sp = allPads[ap]; break; } }
+      if (sp) {
+        html += '<span class="compare-chip">' + esc(sp.name) + ' <span class="chip-remove" onclick="event.stopPropagation();toggleComparePad(\'' + esc(sp.id) + '\')">&#10005;</span></span>';
+      }
+    }
+  }
+  html += '</div>';
+
+  // Surface filter
+  html += '<div class="compare-section-title" style="margin-top:18px"><span>&#9776;</span> 选择产品</div>';
+  html += '<div class="compare-surface-filter" id="compareSurfaceFilter">';
+  for (var f = 0; f < surfaces.length; f++) {
+    html += '<button class="compare-surface-chip' + (f === 0 ? ' active' : '') + '" data-surface="' + surfaces[f] + '" onclick="filterComparePads(\'' + surfaces[f] + '\', this)">' + surfaceLabels[surfaces[f]] + '</button>';
+  }
+  html += '</div>';
+
+  // Pad grid
+  html += '<div class="compare-selector-grid" id="compareGrid">';
+  for (var p = 0; p < allPads.length; p++) {
+    var pad = allPads[p];
+    var sel = selectedIds.indexOf(pad.id) >= 0;
+    html += '<div class="compare-pad-option' + (sel ? ' selected' : '') + '" data-pad-id="' + esc(pad.id) + '" data-surface="' + esc(pad.surface) + '" onclick="toggleComparePad(\'' + esc(pad.id) + '\')" style="position:relative">';
+    html += '<span class="opt-check">&#10003;</span>';
+    html += '<div class="opt-name">' + esc(pad.name) + '</div>';
+    html += '<div class="opt-brand">' + esc(pad.brand) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Radar + legend
+  html += '<div class="compare-section-title" style="margin-top:24px"><span>&#9881;</span> 雷达图对比</div>';
+  html += '<div class="compare-radar-area">';
+  html += '<div class="compare-radar-wrap" id="compareRadar"></div>';
+  html += '<div class="compare-legend" id="compareLegend"></div>';
+  html += '</div>';
+
+  // Generate report button
+  html += '<div style="text-align:center;margin-top:20px">';
+  html += '<button class="btn-search" id="btnGenerateReport" onclick="generateCompareReport()" style="padding:14px 36px;font-size:15px"' + (selectedIds.length >= 2 ? '' : ' disabled') + '>&#128269; 生成对比报告</button>';
+  if (selectedIds.length < 2) {
+    html += '<div style="color:var(--text3);font-size:11px;margin-top:6px">请至少选择 2 款鼠标垫以生成报告</div>';
+  }
+  html += '</div>';
+
+  // Report
+  html += '<div id="compareReport"></div>';
+
+  el.innerHTML = html;
+
+  // Draw radar if enough pads selected
+  if (selectedIds.length >= 2) {
+    updateCompareRadar(allPads, selectedIds);
+  }
+}
+
+// ---- Update radar chart ----
+function updateCompareRadar(allPads, selectedIds) {
+  var container = document.getElementById('compareRadar');
+  var legendEl = document.getElementById('compareLegend');
+  if (!container || !legendEl) return;
+
+  var padsData = [];
+  var legendHtml = '';
+  for (var s = 0; s < selectedIds.length; s++) {
+    var pad = null;
+    for (var p = 0; p < allPads.length; p++) { if (allPads[p].id === selectedIds[s]) { pad = allPads[p]; break; } }
+    if (pad && pad.dimensions) {
+      var color = getPadColor(s);
+      padsData.push({ name: pad.name, color: color, dimensions: pad.dimensions });
+      legendHtml += '<div class="compare-legend-item"><span class="compare-legend-dot" style="background:' + color + '"></span>' + esc(pad.name) + '</div>';
+    }
+  }
+  legendEl.innerHTML = legendHtml;
+
+  if (padsData.length >= 2) {
+    drawMultiRadarChart(container, padsData);
+  } else {
+    container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:60px 0;font-size:14px">请至少选择 2 款产品以显示雷达图</div>';
+    legendEl.innerHTML = '';
+  }
+}
+
+// ---- Generate report (manual trigger from button) ----
+function generateCompareReport() {
+  var reportEl = document.getElementById('compareReport');
+  var btn = document.getElementById('btnGenerateReport');
+  if (!reportEl) return;
+
+  if (compareSelected.length < 2) { alert('请至少选择 2 款鼠标垫'); return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
+  reportEl.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px"><div class="spinner" style="margin:0 auto 12px"></div>AI 分析引擎正在整合产品数据、对比六维表现、生成个性化推荐...</div>';
+
+  var body = JSON.stringify({
+    pad_ids: compareSelected.join(','),
+    mouse_dpi: parseFloat(document.getElementById('mouseDpi').value) || null,
+    game_sens: parseFloat(document.getElementById('gameSens').value) || null,
+    game_id: document.getElementById('gameId').value || 'general',
+    enable_crawl: true,
+    max_videos: 5,
+    max_comments: 15,
+    crawl_timeout: 60
+  });
+
+  fetch('/api/compare', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    reportEl.innerHTML = buildCompareReport(data);
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 重新生成报告'; }
+  })
+  .catch(function() {
+    var pads = [];
+    for (var s = 0; s < compareSelected.length; s++) {
+      for (var p = 0; p < allPadsCache.length; p++) {
+        if (allPadsCache[p].id === compareSelected[s]) { pads.push(allPadsCache[p]); break; }
+      }
+    }
+    reportEl.innerHTML = buildLocalCompareReport(pads, compareSelected);
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 重新生成报告'; }
+  });
+}
+
+// ---- Local fallback report (no API call) ----
+function buildLocalCompareReport(pads, selectedIds) {
+  var dimKeys = ['glide', 'control', 'durability', 'comfort', 'compatibility', 'value'];
+  var dimLabels = { glide: '顺滑度', control: '操控性', durability: '耐用性', comfort: '舒适度', compatibility: '兼容性', value: '性价比' };
+
+  // Per-dimension ranking
+  var html = '<div class="compare-report"><h3><span>&#128202;</span> 对比分析报告（本地）</h3>';
+  html += '<div class="report-section"><div class="report-label">逐维度对比</div>';
+
+  for (var d = 0; d < dimKeys.length; d++) {
+    var dk = dimKeys[d];
+    var ranked = pads.map(function(p) { return { name: p.name, score: (p.dimensions && p.dimensions[dk]) ? p.dimensions[dk] : 0 }; });
+    ranked.sort(function(a, b) { return b.score - a.score; });
+
+    html += '<div class="compare-dim-row"><div class="dim-name">' + dimLabels[dk] + '</div><div class="dim-ranking">';
+    var parts = [];
+    for (var r = 0; r < ranked.length; r++) {
+      var clr = r === 0 ? 'var(--accent)' : 'var(--text2)';
+      parts.push('<span style="color:' + clr + '">' + esc(ranked[r].name) + '(' + ranked[r].score + ')</span>');
+    }
+    html += parts.join(' &gt; ') + '</div></div>';
+  }
+  html += '</div>';
+
+  // Best overall (average)
+  var avgs = pads.map(function(p) {
+    var dims = p.dimensions;
+    if (!dims) return { name: p.name, avg: 0 };
+    var sum = 0;
+    for (var k = 0; k < dimKeys.length; k++) sum += dims[dimKeys[k]] || 0;
+    return { name: p.name, avg: (sum / 6).toFixed(1) };
+  });
+  avgs.sort(function(a, b) { return b.avg - a.avg; });
+
+  html += '<div class="report-section"><div class="report-label">综合评述</div>';
+  html += '<div class="report-text">综合六维平均得分：';
+  var avgParts = [];
+  for (var a = 0; a < avgs.length; a++) {
+    avgParts.push('<strong>' + esc(avgs[a].name) + '</strong> ' + avgs[a].avg + '分');
+  }
+  html += avgParts.join('，') + '。</div></div>';
+
+  // Strengths
+  html += '<div class="report-section"><div class="report-label">各产品优势</div>';
+  for (var p = 0; p < pads.length; p++) {
+    var pd = pads[p];
+    if (!pd.dimensions) continue;
+    var entries = [];
+    for (var k = 0; k < dimKeys.length; k++) entries.push({ key: dimKeys[k], label: dimLabels[dimKeys[k]], score: pd.dimensions[dimKeys[k]] || 0 });
+    entries.sort(function(a, b) { return b.score - a.score; });
+    html += '<div class="report-text" style="margin-bottom:4px"><strong>' + esc(pd.name) + '</strong>：' + entries[0].label + ' ' + entries[0].score + '分、' + entries[1].label + ' ' + entries[1].score + '分</div>';
+  }
+  html += '</div>';
+
+  // Recommendation
+  html += '<div class="compare-recommendation"><div class="rec-label">&#127942; 推荐方案</div>';
+  html += '<div class="rec-text">综合考虑六维表现，推荐 <strong>' + esc(avgs[0].name) + '</strong> 作为首选。</div></div>';
+
+  html += '</div>';
+  return html;
+}
+
+// ---- Toggle pad selection ----
+function toggleComparePad(padId) {
+  var idx = compareSelected.indexOf(padId);
+  if (idx >= 0) {
+    compareSelected.splice(idx, 1);
+  } else {
+    if (compareSelected.length >= 5) { alert('最多选择 5 款鼠标垫'); return; }
+    compareSelected.push(padId);
+  }
+  updateCompareView();
+}
+
+// ---- Filter pads by surface ----
+function filterComparePads(surface, btn) {
+  var chips = document.querySelectorAll('#compareSurfaceFilter .compare-surface-chip');
+  for (var c = 0; c < chips.length; c++) { chips[c].classList.remove('active'); }
+  btn.classList.add('active');
+
+  var options = document.querySelectorAll('#compareGrid .compare-pad-option');
+  for (var o = 0; o < options.length; o++) {
+    var opt = options[o];
+    if (!surface || opt.getAttribute('data-surface') === surface) {
+      opt.style.display = '';
+    } else {
+      opt.style.display = 'none';
+    }
+  }
+}
+
+// ---- Update full compare view ----
+function updateCompareView() {
+  renderCompareContent(allPadsCache, compareSelected);
+}
+
+// ---- Open compare space ----
+function openCompareSpace() {
+  compareSelected = [];
+
+  // Remove existing modal
+  if (modalOverlay) { modalOverlay.remove(); modalOverlay = null; }
+
+  // Fetch all pads if not cached
+  var loadFn = function() {
+    var html = '<div class="modal-overlay active" id="modalOverlay">';
+    html += '<div class="modal-card compare-card">';
+    html += '<div class="modal-header">';
+    html += '<div class="modal-header-info"><h2>&#9879; 对比空间</h2></div>';
+    html += '<button class="modal-close" onclick="closeModal()">&#10005;</button>';
+    html += '</div>';
+    html += '<div class="compare-body" id="compareContent"></div>';
+    html += '</div></div>';
+
+    document.body.insertAdjacentHTML('beforeend', html);
+    modalOverlay = document.getElementById('modalOverlay');
+    document.body.style.overflow = 'hidden';
+
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    renderCompareContent(allPadsCache, compareSelected);
+  };
+
+  if (allPadsCache) {
+    loadFn();
+  } else {
+    fetch('/api/pads')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        allPadsCache = d.pads || [];
+        loadFn();
+      })
+      .catch(function() {
+        // Fallback: use lastSearchData
+        if (lastSearchData && lastSearchData.recommendations) {
+          allPadsCache = lastSearchData.recommendations;
+        } else {
+          allPadsCache = [];
+        }
+        loadFn();
+      });
+  }
+}
+</script>
+<button class="float-compare-btn" id="floatCompareBtn" onclick="openCompareSpace()" title="对比空间">
+  <span class="fc-icon">⚔</span>
+  <span class="fc-label">对比空间</span>
+</button>
+</body>
+</html>
